@@ -8,6 +8,8 @@ Function.prototype.call2 = function (context) {
 	}
 	// 此处为第二个关键点，需要通过字符串参数数组的方式，把不定数参数传下去。如果进一步分析，最为关键的在于不定数参数如何传递下去
 	const result = eval('context.fn(' + args + ')')
+
+	
 	delete context.fn
 	return result
 }
