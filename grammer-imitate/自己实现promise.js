@@ -1,5 +1,7 @@
 
 
+// 1.实现then方法中存在promise的情况
+// 2.实现错误处理，比如catch方法
 function Promiser(func) {
 	// 当前状态
 	this.state = 'pending'
