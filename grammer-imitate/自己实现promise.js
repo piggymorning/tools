@@ -1,7 +1,7 @@
 
 
-// 1.实现then方法中存在promise的情况
-// 2.实现错误处理，比如catch方法
+// 1.实现错误处理，比如catch方法
+// 2.需要考虑已经生成的promise，在其他的后执行的代码中，使用的情况
 function Promiser(func) {
 	// 当前状态
 	this.state = 'pending'
@@ -28,7 +28,12 @@ Promiser.prototype.resolve = function (e) {
 	this.value = e
 	if (this.subscribeInstance.length > 0) {
 		for (instance of this.subscribeInstance) {
-			instance.resolve(instance.successHandle(e))
+			const thenResult = instance.successHandle(e)
+			if (thenResult instanceof Promiser) {
+				thenResult.subscribeInstance = [...thenResult.subscribeInstance,...instance.subscribeInstance]
+			} else {
+				instance.resolve(thenResult)
+			}
 		}
 	}
 }
@@ -51,16 +56,29 @@ const p1 = new Promiser(function (resolve, reject) {
 })
 
 const p2 = p1.then(function (e) {
-	console.log('p2:', e)
-	return 'from p2'
+	console.log('p2',e)
+	return new Promiser(function (resolve, reject) {
+		setTimeout(function () {
+			resolve('from p2')
+		}, 3000)
+	})
+	
 })
 const p3 = p2.then(function (e) {
 	console.log('p3', e)
-	return 'from p3'
+	return new Promiser(function (resolve, reject) {
+		setTimeout(function () {
+			resolve('from p3')
+		}, 3000)
+	})
 })
 
-const p4 = p1.then(function (e) {
+const p4 = p3.then(function (e) {
 	console.log('p4', e)
+})
+
+const p5 = p2.then(function(e){
+	console.log('this is p5:',e)
 })
 
 
