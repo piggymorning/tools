@@ -1,35 +1,43 @@
 
 
 function Promiser(func) {
+	// 当前状态
 	this.state = 'pending'
-	this.func1List = []
-	this.func2List = []
-	this.attach = []
+	// 当前值
+	this.value = null
+	// 当前错误
+	this.error = null
+	// 已订阅此promiser实例的其他实例
+	this.subscribeInstance = []
 	func.call(this, this.resolve.bind(this), this.reject.bind(this))
 }
 
-Promiser.prototype.then = function (func1, func2) {
+Promiser.prototype.then = function (successHandle, errorHandle) {
 	const that = this
-	this.func1List.push(func1) 
-	this.func2List.push(func2) 
-	return new Promiser(function (resolve, reject) {
-		that.attach.push(this)
+	return new Promiser(function () {
+		this.successHandle = successHandle
+		this.errorHandle = errorHandle
+		that.subscribeInstance.push(this)
 	})
 }
 
 Promiser.prototype.resolve = function (e) {
 	this.state = 'fullfilled'
-	this.currentValue = e
-	if (this.attach.length > 0) {
-		for ([i,pObj] of this.attach.entries()) {
-			const res = this.func1List[i](e)
-			pObj.resolve(res)
+	this.value = e
+	if (this.subscribeInstance.length > 0) {
+		for (instance of this.subscribeInstance) {
+			instance.resolve(instance.successHandle(e))
 		}
 	}
 }
 Promiser.prototype.reject = function (e) {
 	this.state = 'failed'
-	return this.func2(e)
+	this.error = e
+	if (this.subscribeInstance.length > 0) {
+		for (instance of this.subscribeInstance.entries()) {
+			instance.reject(instance.errorHandle(e))
+		}
+	}
 }
 
 
