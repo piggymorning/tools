@@ -1,7 +1,9 @@
 
 
-// 1.实现错误处理，比如catch方法
-// 2.需要考虑已经生成的promise，在其他的后执行的代码中，使用的情况
+// 1.未捕获的错误处理
+// 2.用类来重构一遍promiser
+// 3.考虑一下如何实现promise中提供的其他方法
+
 function Promiser(func) {
 	// 当前状态
 	this.state = 'pending'
@@ -15,12 +17,25 @@ function Promiser(func) {
 }
 
 Promiser.prototype.then = function (successHandle, errorHandle) {
-	const that = this
-	
-	return new Promiser(function () {
-		this.successHandle = successHandle
-		this.errorHandle = errorHandle
-		that.subscribeInstance.push(this)
+	const { state, value, subscribeInstance } = this
+	return new Promiser(function (resolve, reject) {
+		if (state === 'pending') {
+			this.successHandle = successHandle
+			this.errorHandle = errorHandle
+			subscribeInstance.push(this)
+		} else if (state === 'fullfilled') {
+			const handleResult = successHandle(value)
+			if (handleResult instanceof Promiser) return handleResult
+			else resolve(handleResult)
+		} else {
+			if (errorHandle) {
+				const handleResult = errorHandle(value)
+				if (handleResult instanceof Promiser) return handleResult
+				else (resolve(handleResult))
+			} else {
+				reject(value)
+			}
+		}
 	})
 }
 
@@ -28,31 +43,51 @@ Promiser.prototype.resolve = function (e) {
 	// 改变当前promise实例的状态和储存值
 	this.state = 'fullfilled'
 	this.value = e
-	// 处理后续的相关的promise
+	// this.subscribeInstance.length如果大于0，说明本次resolve是异步执行的，需要处理后面then方法提前在subscribeInstance中存好的待处理的实例
 	if (this.subscribeInstance.length > 0) {
 		for (instance of this.subscribeInstance) {
 			// 这块对于then方法返回的实例来说，是在执行本体的方法，就像是普通的new Promise执行的时候，本体中的代码
 			const thenResult = instance.successHandle(e)
 			if (thenResult instanceof Promiser) {
-				thenResult.subscribeInstance = [...thenResult.subscribeInstance,...instance.subscribeInstance]
+				thenResult.subscribeInstance = [...thenResult.subscribeInstance, ...instance.subscribeInstance]
 			} else {
 				// 这块对于then方法返回的实例来说，是在执行本体后面绑定的方法
 				instance.resolve(thenResult)
 			}
 		}
 	}
+	// 如果this.subscribeInstance.length如果小于0，说明后面要么是没跟then方法，要么就是resolve是同步执行的，都无需处理。如果是同步执行的，那后面的交给resolve去处理
 }
 Promiser.prototype.reject = function (e) {
 	this.state = 'failed'
 	this.error = e
+	// 处理后续的相关的promise
 	if (this.subscribeInstance.length > 0) {
-		for (instance of this.subscribeInstance.entries()) {
-			instance.reject(instance.errorHandle(e))
+		for (instance of this.subscribeInstance) {
+			// 这块对于then方法返回的实例来说，是在执行本体的方法，就像是普通的new Promise执行的时候，本体中的代码
+			if (instance.errorHandle) {
+				// 这里的判断就是看看then方法返回的promise实例中，有没有负责错误处理的函数，有的话就处理，处理了以后
+				// 靠then连起来的“链条”就又恢复正常了，所以接着往下执行,没有的话，就直接执行reject，相当于跨过当前实例
+				// 的处理环节（因为没有给处理环节），接着把错误传递给后面的实例，看看有没有能够处理的
+				const thenResult = instance.errorHandle(e)
+				if (thenResult instanceof Promiser) {
+					thenResult.subscribeInstance = [...thenResult.subscribeInstance, ...instance.subscribeInstance]
+				} else {
+					// 这块对于then方法返回的实例来说，是在执行本体后面绑定的方法
+					instance.resolve(thenResult)
+				}
+			} else {
+				instance.reject(e)
+			}
+
 		}
 	}
 }
+Promiser.prototype.catch = function (catchHandle) {
+	this.then((e) => e, catchHandle)
+}
 /* 
-	这里面有几个关键点：
+	基础功能实现关键点：
 	1、首先，then方法后面可以无限地接then方法，那么then方法返回的一定是个promiser实例
 	2、要知道虽然在使用的效果是then方面里面的函数，是等上一个promise完成之后才能执行，但实际上跑
 	代码的时候，是一连气把多个then方法全部执行玩的，所以这些方法里的函数，需要提前储存好
@@ -80,7 +115,24 @@ Promiser.prototype.reject = function (e) {
 	真的会比较好处理。一个对象本身有哪些属性和方法，这些属性和方法都可以干什么，然后实例本身也可以作为参数直接传递，通过
 	修改实例的属性，可以影响实例在执行常规操作时的额外功能处理                 
 	*/
+/* 
+	reject处理环节与加同步处理关键点：第一版写出来的其实第一个环节是异步的，没有考虑同步的情况，所以promise中的state都没有用到
+	1、reject的处理其实和resolve非常类似，主要有两个区别，一是reject如果处理完毕了，那本次其实就算是resolve了，接下来的实例还是需要
+	接着执行resolve，而不是继续reject。另外就是对于reject的处理函数，有不存在的可能，那就相当于本次是reject的了，下面的实例还是需要处理reject环节
+	2、第一次的写法里，其实只考虑了第一次promise是异步处理的情况，then方法只是把successHandle和errorHandle存了起来，然后把
+	自己暂时存储在了上个promise的暂处理状态中。可是假如第一次promise是同步的情况，也就是resolve执行的时候，then方法还没执行呢，
+	那then方面内部的东西，就需要自己来执行了，因此then方法里面需要添加逻辑处理。在写这段的时候，脑子里产生了两个灵感点，第一个
+	是应该提前考虑一下代码的执行顺序，在第一个promise实例开始的时候，resolve的执行有两种情况，第一种情况是同步执行，那代码的顺序
+	就是resolve先执行，之后then再执行，then执行的时候，自身也是个promise实例，那是resolve还是reject，就需要在then环节自己就
+	处理了，而不是暂存到第一个promise实例中的subscribes中，因此之前第一版代码是不行的。第二种情况是resolve异步执行，比如放了个
+	定时器，那么第一个promise执行完后，到了then方法这里，生成的新promise实例是否resolve或reject，就不能由自身决定了，这时就需要
+	暂存在第一个promise的subsribs中。第二个灵感，就是在then方法里写了不少的逻辑判断，期初感觉思维有点乱，后来忽然发现，不需要考虑
+	太多，最关键的是知道这个then方法，最终返回的是一个promise对象，多个then之间，都是较为独立的promise对象，中间的这些逻辑处理，
+	无非就是改变相关的对象中的状态而已，因此把握住关键的return就可以了，剩下的都是对象内的小动作。此外，在写对象中的方法的时候，
+	如果方法和多个对象有关系，那么需要考虑代码对多个对象的影响，就考虑当前的对象就可以了，即当前是哪个对象，然后这个方法会对对象本身产生
+	什么影响，改变了哪些状态，最后返回的是哪个对象，就足够了
 
+*/
 const p1 = new Promiser(function (resolve, reject) {
 	console.log('start....',)
 	setTimeout(function () {
@@ -89,13 +141,13 @@ const p1 = new Promiser(function (resolve, reject) {
 })
 
 const p2 = p1.then(function (e) {
-	console.log('p2',e)
+	console.log('p2', e)
 	return new Promiser(function (resolve, reject) {
 		setTimeout(function () {
 			resolve('from p2')
 		}, 3000)
 	})
-	
+
 })
 const p3 = p2.then(function (e) {
 	console.log('p3', e)
@@ -110,8 +162,8 @@ const p4 = p3.then(function (e) {
 	console.log('p4', e)
 })
 
-const p5 = p2.then(function(e){
-	console.log('this is p5:',e)
+const p5 = p2.then(function (e) {
+	console.log('this is p5:', e)
 })
 
 
