@@ -1,90 +1,90 @@
 
 
 // 1.未捕获的错误处理
-// 2.用类来重构一遍promiser
-// 3.考虑一下如何实现promise中提供的其他方法
+// 2.考虑一下如何实现promise中提供的其他方法
 
-function Promiser(func) {
-	// 当前状态
-	this.state = 'pending'
-	// 当前值
-	this.value = null
-	// 当前错误
-	this.error = null
-	// 已订阅此promiser实例的其他实例
-	this.subscribeInstance = []
-	func.call(this, this.resolve.bind(this), this.reject.bind(this))
-}
-
-Promiser.prototype.then = function (successHandle, errorHandle) {
-	const { state, value, subscribeInstance } = this
-	return new Promiser(function (resolve, reject) {
-		if (state === 'pending') {
-			this.successHandle = successHandle
-			this.errorHandle = errorHandle
-			subscribeInstance.push(this)
-		} else if (state === 'fullfilled') {
-			const handleResult = successHandle(value)
-			if (handleResult instanceof Promiser) return handleResult
-			else resolve(handleResult)
-		} else {
-			if (errorHandle) {
-				const handleResult = errorHandle(value)
-				if (handleResult instanceof Promiser) return handleResult
-				else (resolve(handleResult))
-			} else {
-				reject(value)
-			}
-		}
-	})
-}
-
-Promiser.prototype.resolve = function (e) {
-	// 改变当前promise实例的状态和储存值
-	this.state = 'fullfilled'
-	this.value = e
-	// this.subscribeInstance.length如果大于0，说明本次resolve是异步执行的，需要处理后面then方法提前在subscribeInstance中存好的待处理的实例
-	if (this.subscribeInstance.length > 0) {
-		for (instance of this.subscribeInstance) {
-			// 这块对于then方法返回的实例来说，是在执行本体的方法，就像是普通的new Promise执行的时候，本体中的代码
-			const thenResult = instance.successHandle(e)
-			if (thenResult instanceof Promiser) {
-				thenResult.subscribeInstance = [...thenResult.subscribeInstance, ...instance.subscribeInstance]
-			} else {
-				// 这块对于then方法返回的实例来说，是在执行本体后面绑定的方法
-				instance.resolve(thenResult)
-			}
-		}
+class Promiser {
+	state = 'pending'
+	value = null
+	subscribeInstance = []
+	constructor(func) {
+		func(this.resolve.bind(this), this.reject.bind(this))
 	}
-	// 如果this.subscribeInstance.length如果小于0，说明后面要么是没跟then方法，要么就是resolve是同步执行的，都无需处理。如果是同步执行的，那后面的交给resolve去处理
-}
-Promiser.prototype.reject = function (e) {
-	this.state = 'failed'
-	this.error = e
-	// 处理后续的相关的promise
-	if (this.subscribeInstance.length > 0) {
-		for (instance of this.subscribeInstance) {
-			// 这块对于then方法返回的实例来说，是在执行本体的方法，就像是普通的new Promise执行的时候，本体中的代码
-			if (instance.errorHandle) {
-				// 这里的判断就是看看then方法返回的promise实例中，有没有负责错误处理的函数，有的话就处理，处理了以后
-				// 靠then连起来的“链条”就又恢复正常了，所以接着往下执行,没有的话，就直接执行reject，相当于跨过当前实例
-				// 的处理环节（因为没有给处理环节），接着把错误传递给后面的实例，看看有没有能够处理的
-				const thenResult = instance.errorHandle(e)
+
+	then(successHandle, errorHandle) {
+		const { state, value, error, subscribeInstance } = this
+		return new Promiser(function (resolve, reject) {
+			// resolve是异步执行的，此时resolve还未执行
+			if (state === 'pending') {
+				this.successHandle = successHandle
+				this.errorHandle = errorHandle
+				subscribeInstance.push(this)
+			} else if (state === 'fullfilled') {
+				// resolve同步执行，此时resolve已经执行完毕，这个successHandle，其实就相当于是现在这个promise生成时接收的函数
+				const handleResult = successHandle(value)
+				// 如果是个promise实例，那么当前实例就不用要了，直接返回这个实例，后面的交给它处理就好了
+				if (handleResult instanceof Promiser) return handleResult
+				else resolve(handleResult)
+			} else {
+				if (errorHandle) {
+					const handleResult = errorHandle(error)
+					if (handleResult instanceof Promiser) return handleResult
+					else (resolve(handleResult))
+				} else {
+					reject(error)
+				}
+			}
+		})
+	}
+
+	resolve(e) {
+		// 改变当前promise实例的状态和储存值
+		this.state = 'fullfilled'
+		this.value = e
+		// this.subscribeInstance.length如果大于0，说明本次resolve是异步执行的，需要处理后面then方法提前在subscribeInstance中存好的待处理的实例
+		if (this.subscribeInstance.length > 0) {
+			for (instance of this.subscribeInstance) {
+				// 这块对于then方法返回的实例来说，是在执行本体的方法，就像是普通的new Promise执行的时候，本体中的代码
+				const thenResult = instance.successHandle(e)
 				if (thenResult instanceof Promiser) {
 					thenResult.subscribeInstance = [...thenResult.subscribeInstance, ...instance.subscribeInstance]
 				} else {
 					// 这块对于then方法返回的实例来说，是在执行本体后面绑定的方法
 					instance.resolve(thenResult)
 				}
-			} else {
-				instance.reject(e)
 			}
-
 		}
 	}
-}
-Promiser.prototype.catch = function (catchHandle) {
-	this.then((e) => e, catchHandle)
+
+	reject(e) {
+		this.state = 'failed'
+		this.error = e
+		// 处理后续的相关的promise
+		if (this.subscribeInstance.length > 0) {
+			for (instance of this.subscribeInstance) {
+				// 这块对于then方法返回的实例来说，是在执行本体的方法，就像是普通的new Promise执行的时候，本体中的代码
+				if (instance.errorHandle) {
+					// 这里的判断就是看看then方法返回的promise实例中，有没有负责错误处理的函数，有的话就处理，处理了以后
+					// 靠then连起来的“链条”就又恢复正常了，所以接着往下执行,没有的话，就直接执行reject，相当于跨过当前实例
+					// 的处理环节（因为没有给处理环节），接着把错误传递给后面的实例，看看有没有能够处理的
+					const thenResult = instance.errorHandle(e)
+					if (thenResult instanceof Promiser) {
+						thenResult.subscribeInstance = [...thenResult.subscribeInstance, ...instance.subscribeInstance]
+					} else {
+						// 这块对于then方法返回的实例来说，是在执行本体后面绑定的方法
+						instance.resolve(thenResult)
+					}
+				} else {
+					instance.reject(e)
+				}
+
+			}
+		}
+	}
+
+	catch(catchHandle) {
+		this.then(null, catchHandle)
+	}
 }
 /* 
 	基础功能实现关键点：
@@ -133,6 +133,19 @@ Promiser.prototype.catch = function (catchHandle) {
 	什么影响，改变了哪些状态，最后返回的是哪个对象，就足够了
 
 */
+
+/* 
+	将构造函数形式的写法改为类的写法：
+	1、类的写法确实相当于提供了语法糖，和构造函数的写法区别不大。关键点在于类中对属性和方法的组织规范，记住了就行。首先是实例的属性
+	和方法，类中有个constructor函数，这个函数就和其名字一样，相当于就是原来的构造函数，这里面有this定义的属性和方法，就是实例的。
+	construtor外面直接写上去的方法，就是原型方法。可以看到，这种规范其实写起来是最舒服的，之前写构造函数的时候，写的最多的就是实例
+	的属性和原型的方法，现在类的规范，在写实例属性和原型方法时都很方便。在看文档的时候，还学到了一些其他的概念，对于类中的方法或者
+	属性，有公有、私有、静态、动态之分。所谓动态属性或方法，就是最常用的，说它是动态，可能是因为所有实例都可以使用。与之相对的是静态
+	方法，静态方法就是不同在实例上用，是固定绑定在类上的，只能通过类直接调用。公有、私有的话就是内外之分了，私有只能在类的内部调用，
+	类的外部可以调用的方法或者属性就是公有
+ */
+
+
 const p1 = new Promiser(function (resolve, reject) {
 	console.log('start....',)
 	setTimeout(function () {
