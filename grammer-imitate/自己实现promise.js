@@ -8,7 +8,7 @@ class Promiser {
 	value = null
 	subscribeInstance = []
 	constructor(func) {
-		func(this.resolve.bind(this), this.reject.bind(this))
+		func.call(this,this.resolve.bind(this), this.reject.bind(this))
 	}
 
 	then(successHandle, errorHandle) {
@@ -43,7 +43,7 @@ class Promiser {
 		this.value = e
 		// this.subscribeInstance.length如果大于0，说明本次resolve是异步执行的，需要处理后面then方法提前在subscribeInstance中存好的待处理的实例
 		if (this.subscribeInstance.length > 0) {
-			for (instance of this.subscribeInstance) {
+			for (let instance of this.subscribeInstance) {
 				// 这块对于then方法返回的实例来说，是在执行本体的方法，就像是普通的new Promise执行的时候，本体中的代码
 				const thenResult = instance.successHandle(e)
 				if (thenResult instanceof Promiser) {
@@ -61,7 +61,7 @@ class Promiser {
 		this.error = e
 		// 处理后续的相关的promise
 		if (this.subscribeInstance.length > 0) {
-			for (instance of this.subscribeInstance) {
+			for (let instance of this.subscribeInstance) {
 				// 这块对于then方法返回的实例来说，是在执行本体的方法，就像是普通的new Promise执行的时候，本体中的代码
 				if (instance.errorHandle) {
 					// 这里的判断就是看看then方法返回的promise实例中，有没有负责错误处理的函数，有的话就处理，处理了以后
