@@ -251,7 +251,7 @@ function countReverseOrder(arr) {
 // 获取数组中第n大的元素
 function getN(arr, n) {
 	let target = {};
-	let N = n-1
+	let N = n - 1
 	function __partition(arr, l, r) {
 		const index = Math.floor(Math.random() * (r - l) + l)
 		exchange(arr, index, l)
@@ -272,23 +272,23 @@ function getN(arr, n) {
 			greater: gt
 		}
 	}
-	function recursion(arr, l, r,count) {
+	function recursion(arr, l, r, count) {
 		if (l >= r) {
 			target.a = arr[l]
 			return
 		}
 		const obj = __partition(arr, l, r)
 		if (obj.less >= count) {
-			recursion(arr,l, obj.less,count)
+			recursion(arr, l, obj.less, count)
 		} else if (obj.greater <= count) {
-			recursion(arr,obj.greater, r,count)
+			recursion(arr, obj.greater, r, count)
 		} else {
 			target.a = arr[obj.less + 1]
 			return
 		}
 	}
-	recursion(arr, 0, arr.length - 1,N)
-	return target 
+	recursion(arr, 0, arr.length - 1, N)
+	return target
 }
 // const testArray = randomArrayGenerator(100000, 1, 100)
 // const testArray = generateNearlyOrderedArray(900000, 0)
