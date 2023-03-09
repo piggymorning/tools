@@ -51,6 +51,58 @@ class Component {
 	}
 }
 
+class Path {
+	constructor(graph, s) {
+		this.g = graph
+		this.s = s
+		this.visited = new Array(this.g.V()).fill(false)
+		this.from = new Array(this.g.V()).fill(-1)
+		this.pathRecord = []
+		// 此处和component的区别，是直接选取一个点开始的
+		if (s >= 0 && s < this.g.V()) {
+			this.dfs(s)
+		}
+	}
+	dfs(i) {
+		if (this.visited[i]) {
+			return
+		}
+		this.visited[i] = true
+		const adj = new this.g.iterator(this.g, i)
+		for (let j = adj.begin(); !adj.end(); j = adj.next()) {
+			if (!this.visited[j]) {
+				this.from[j] = Number(i)
+				this.dfs(j)
+			}
+		}
+	}
+
+	hasPath(w) {
+		return this.visited[w]
+	}
+	path(w) {
+		const stack = []
+		let p = w
+		while (p !== -1) {
+			stack.push(p)
+			p = this.from[p]
+		}
+		while (stack.length !== 0) {
+			this.pathRecord.push(stack.pop())
+		}
+	}
+	showPath(w) {
+		this.path(w)
+		let path = ''
+		this.pathRecord.forEach(function (p, index) {
+			path = index === 0 ? p : `${path}=>${p}`
+		})
+		console.log('the path is:', path)
+	}
+
+}
+
+
 module.exports = {
-	ReadGraph, Component
+	ReadGraph, Component, Path
 }

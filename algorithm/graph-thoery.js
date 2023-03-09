@@ -1,4 +1,4 @@
-const { ReadGraph,Component } = require('./readGraph')
+const { ReadGraph, Component, Path } = require('./readGraph')
 
 class sIterator {
 	constructor(graph, v) {
@@ -93,10 +93,10 @@ class DenseGraph {
 		return this.g[v][w]
 	}
 
-	show(){
-		for(let i=0;i<this.n;i++){
+	show() {
+		for (let i = 0; i < this.n; i++) {
 			let res = ''
-			for(let j=0;j<this.g[i].length;j++){
+			for (let j = 0; j < this.g[i].length; j++) {
 				res = `${res} ${this.g[i][j]}`
 			}
 			console.log(`${res}\r`)
@@ -161,17 +161,17 @@ class SparseGraph {
 	// 	})
 	// 	return res
 	// }
-	show(){
-		for(let i=0;i<this.n;i++){
+	show() {
+		for (let i = 0; i < this.n; i++) {
 			let res = ''
-			for(let j=0;j<this.g[i].length;j++){
-				res = `${res} ${this.g[i][j]}` 
+			for (let j = 0; j < this.g[i].length; j++) {
+				res = `${res} ${this.g[i][j]}`
 			}
 			console.log(`vertex ${i}:${res}`)
 		}
 		console.log('end',)
 	}
-	
+
 }
 
 
@@ -220,26 +220,33 @@ function ergodic2() {
 // ergodic1()
 // ergodic2()
 
-function test1(){
+function test1() {
 	const filename = 'graph1.txt'
-	const g1 = new SparseGraph(6,false)
-	const r1 = new ReadGraph(g1,filename)
+	const g1 = new SparseGraph(6, false)
+	const r1 = new ReadGraph(g1, filename)
 	g1.show()
-	const g2 = new DenseGraph(6,false)
-	const r2 = new ReadGraph(g2,filename)
+	const g2 = new DenseGraph(6, false)
+	const r2 = new ReadGraph(g2, filename)
 	g2.show()
 }
 
 
-function test2(){
-	const g1 = new SparseGraph(13,false)
-	const r1 = new ReadGraph(g1,'graph1.txt')
+function test2() {
+	const g1 = new SparseGraph(13, false)
+	const r1 = new ReadGraph(g1, 'graph1.txt')
 	const component1 = new Component(g1)
-	const g2 = new SparseGraph(7,false)
-	const r2 = new ReadGraph(g2,'graph2.txt')
+	const g2 = new SparseGraph(7, false)
+	const r2 = new ReadGraph(g2, 'graph2.txt')
 	const component2 = new Component(g2)
-	console.log('component1:',component1.ccount)
-	console.log('component2',component2.ccount)
+	console.log('component1:', component1.ccount)
+	console.log('component2', component2.ccount)
 }
 
-test2()
+function test3() {
+	const g1 = new SparseGraph(13, false)
+	const r1 = new ReadGraph(g1, 'graph1.txt')
+	const path = new Path(g1, 0)
+	path.showPath(3)
+}
+
+test3()
