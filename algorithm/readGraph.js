@@ -82,6 +82,7 @@ class Path {
 	}
 	path(w) {
 		const stack = []
+		this.pathRecord = []
 		let p = w
 		while (p !== -1) {
 			stack.push(p)
@@ -102,7 +103,62 @@ class Path {
 
 }
 
+// 此处感觉颇为巧妙，广度优先遍历，其实就是层级遍历，层级遍历天然就等于在求最短路径，只要把中间过程记录一下即可
+class ShortestPath {
+	constructor(graph, s) {
+		this.g = graph
+		this.s = s
+		this.visited = new Array(this.g.V()).fill(false)
+		this.from = new Array(this.g.V()).fill(-1)
+		this.ord = new Array(this.g.V()).fill(-1)
+		const q = []
+		q.push(s)
+		this.visited[s] = true
+		this.ord[s] = 0
+		while (q.length > 0) {
+			const i = q.shift()
+			const adj = new this.g.iterator(this.g, i)
+			for (let j = adj.begin(); !adj.end(); j = adj.next()) {
+				if (!this.visited[j]) {
+					q.push(j)
+					this.from[j] = Number(i)
+					this.visited[j] = true
+					this.ord[j] = this.ord[i]+1
+				}
+			}
+		}
+	}
+
+	hasPath(w) {
+		return this.visited[w]
+	}
+	path(w) {
+		const stack = []
+		this.pathRecord = []
+		let p = w
+		while (p !== -1) {
+			stack.push(p)
+			p = this.from[p]
+		}
+		while (stack.length !== 0) {
+			this.pathRecord.push(stack.pop())
+		}
+	}
+	showPath(w) {
+		this.path(w)
+		let path = ''
+		this.pathRecord.forEach(function (p, index) {
+			path = index === 0 ? p : `${path}=>${p}`
+		})
+		console.log('the path is:', path)
+	}
+	length(w) {
+		if (w >= 0 && w < this.g.V()) {
+			return this.ord[w]
+		}
+	}
+}
 
 module.exports = {
-	ReadGraph, Component, Path
-}
+	ReadGraph, Component, Path,ShortestPath
+} 

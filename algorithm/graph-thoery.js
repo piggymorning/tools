@@ -1,4 +1,4 @@
-const { ReadGraph, Component, Path } = require('./readGraph')
+const { ReadGraph, Component, Path,ShortestPath } = require('./readGraph')
 
 class sIterator {
 	constructor(graph, v) {
@@ -246,7 +246,9 @@ function test3() {
 	const g1 = new SparseGraph(13, false)
 	const r1 = new ReadGraph(g1, 'graph1.txt')
 	const path = new Path(g1, 0)
-	path.showPath(3)
+	path.showPath(6)
+	const shortestPath = new ShortestPath(g1,0)
+	shortestPath.showPath(6)
 }
 
 test3()
