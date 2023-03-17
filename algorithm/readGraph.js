@@ -7,9 +7,10 @@ class ReadGraph {
 			list.push(line)
 		});
 		const [V, E] = list.shift()
+		console.log('list-----',list)
 		for (let i = 0; i < list.length; i++) {
-			const [n, m] = list[i].split(' ')
-			graph.addEdge(n, m)
+			const [n, m, w] = list[i].split(' ')
+			graph.addEdge(n, m, w)
 		}
 	}
 }
@@ -123,7 +124,7 @@ class ShortestPath {
 					q.push(j)
 					this.from[j] = Number(i)
 					this.visited[j] = true
-					this.ord[j] = this.ord[i]+1
+					this.ord[j] = this.ord[i] + 1
 				}
 			}
 		}
@@ -160,5 +161,5 @@ class ShortestPath {
 }
 
 module.exports = {
-	ReadGraph, Component, Path,ShortestPath
+	ReadGraph, Component, Path, ShortestPath
 } 

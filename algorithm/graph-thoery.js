@@ -1,5 +1,5 @@
-const { ReadGraph, Component, Path,ShortestPath } = require('./readGraph')
-
+const { ReadGraph, Component, Path, ShortestPath } = require('./readGraph')
+const { Edge } = require('./weight-graph')
 class sIterator {
 	constructor(graph, v) {
 		this.graph = graph
@@ -38,7 +38,7 @@ class dIterator {
 	next() {
 		for (this.index++; this.index < this.graph.V(); this.index++) {
 			if (this.graph.g[this.v][this.index]) {
-				return this.index
+				return this.graph.g[this.v][this.index]
 			}
 		}
 	}
@@ -56,7 +56,7 @@ class DenseGraph {
 		this.direacted = direacted;
 		this.g = []
 		for (let i = 0; i < n; i++) {
-			this.g.push(new Array(n).fill(0))
+			this.g.push(new Array(n).fill(null))
 		}
 	}
 	V() {
@@ -67,7 +67,7 @@ class DenseGraph {
 		return this.m
 	}
 	// v,w为两个点
-	addEdge(v, w) {
+	addEdge(v, w, weight) {
 		if (v < 0 || v >= this.n) {
 			return
 		}
@@ -75,11 +75,15 @@ class DenseGraph {
 			return
 		}
 		if (this.hasEdge(v, w)) {
-			return
+			this.g[v][w] = null
+			if (!this.direacted) {
+				this.g[w][v] = null
+			}
+			this.m--
 		}
-		this.g[v][w] = 1
+		this.g[v][w] = new Edge(v, w, weight)
 		if (!this.direacted) {
-			this.g[w][v] = 1
+			this.g[w][v] = new Edge(v, w, weight)
 		}
 		this.m++
 	}
@@ -90,14 +94,18 @@ class DenseGraph {
 		if (w < 0 || w >= this.n) {
 			return
 		}
-		return this.g[v][w]
+		return this.g[v][w] !== null
 	}
 
 	show() {
 		for (let i = 0; i < this.n; i++) {
 			let res = ''
 			for (let j = 0; j < this.g[i].length; j++) {
-				res = `${res} ${this.g[i][j]}`
+				if(this.g[i][j]){
+					res = `${res}   ${this.g[i][j].wt()}`
+				}else{
+					res = `${res} null`
+				}
 			}
 			console.log(`${res}\r`)
 		}
@@ -222,9 +230,9 @@ function ergodic2() {
 
 function test1() {
 	const filename = 'graph1.txt'
-	const g1 = new SparseGraph(6, false)
-	const r1 = new ReadGraph(g1, filename)
-	g1.show()
+	// const g1 = new SparseGraph(6, false)
+	// const r1 = new ReadGraph(g1, filename)
+	// g1.show()
 	const g2 = new DenseGraph(6, false)
 	const r2 = new ReadGraph(g2, filename)
 	g2.show()
@@ -247,8 +255,8 @@ function test3() {
 	const r1 = new ReadGraph(g1, 'graph1.txt')
 	const path = new Path(g1, 0)
 	path.showPath(6)
-	const shortestPath = new ShortestPath(g1,0)
+	const shortestPath = new ShortestPath(g1, 0)
 	shortestPath.showPath(6)
 }
 
-test3()
+test1()

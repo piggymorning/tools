@@ -1,51 +1,63 @@
-const { exchange } = require('./sortHelper')
-function quickSortNoN(list, n) {
-	n = n-1
-	let res = {a:0}
-	// 找到那个p点
-	function __partition(list, l, r) {
-		const index = l + Math.floor(Math.random() * (r - l))
-		exchange(list, l, index)
-		const target = list[l]
-		// 保证[l+1,j]<target [j+1,i)=target [k,r]>target 
-		let j = l, i = l+1, k = r+1
-		while (i < k) {
-			if (list[i] > target) {
-				exchange(list, i, k - 1)
-				k--
-			} else if (list[i] < target) {
-				exchange(list, i, j + 1)
-				j++
-				i++
-			} else {
-				i++
+function getChildren(board) {
+	const result = []
+	let zeroArrayIndex;
+	let zeroIndex;
+	board.forEach((e, i) => {
+		const res = e.indexOf(0)
+		if (res !== -1) {
+			zeroArrayIndex = i
+			zeroIndex = res
+		}
+	})
+	const otherArrayIndex = zeroArrayIndex === 0 ? 1 : 0
+	const boardtemp1 = JSON.parse(JSON.stringify({ data: board })).data
+	boardtemp1[zeroArrayIndex][zeroIndex] = boardtemp1[otherArrayIndex][zeroIndex]
+	boardtemp1[otherArrayIndex][zeroIndex] = 0
+	result.push(boardtemp1)
+	if (zeroIndex !== 0) {
+		const boardtemp2 = JSON.parse(JSON.stringify({ data: board })).data
+		boardtemp2[zeroArrayIndex][zeroIndex] = boardtemp2[zeroArrayIndex][zeroIndex - 1]
+		boardtemp2[zeroArrayIndex][zeroIndex - 1] = 0
+		result.push(boardtemp2)
+	}
+	if (zeroIndex !== 2) {
+		const boardtemp3 = JSON.parse(JSON.stringify({ data: board })).data
+		boardtemp3[zeroArrayIndex][zeroIndex] = boardtemp3[zeroArrayIndex][zeroIndex + 1]
+		boardtemp3[zeroArrayIndex][zeroIndex + 1] = 0
+		result.push(boardtemp3)
+	}
+	return result
+}
+function slidingPuzzle(board) {
+	const dest = [[1, 2, 3], [4, 5, 0]]
+	if(`${board[0]}-${board[1]}` === `${dest[0]}-${dest[1]}`){
+		return 0
+	}
+	const ord = {}
+	const initial = board
+	const q = []
+	q.push(initial)
+	ord[`${initial[0]}-${initial[1]}`] = 0
+	let isFind = false
+	let res
+	while (q.length > 0 && !isFind) {
+		const target = q.shift()
+		const children = getChildren(target)
+		children.forEach(e => {
+			if (!ord[`${e[0]}-${e[1]}`] && !isFind) {
+				q.push(e)
+				ord[`${e[0]}-${e[1]}`] = ord[`${target[0]}-${target[1]}`] + 1
+				if (`${e[0]}-${e[1]}` === `${dest[0]}-${dest[1]}`) {
+					isFind = true
+					res = ord[`${e[0]}-${e[1]}`]
+				}
 			}
-		}
-		exchange(list, l, j)
-		j--
-		return {
-			min: j,
-			max: k
-		}
+		})
 	}
-	// 判断p点与k的索引值大小，继续迭代
-	function __recurse(list, n, l, r) {
-		if(l>=r){
-			res.a = l
-			return
-		}
-		const obj = __partition(list, l, r)
-		if (n > obj.min && n < obj.max) {
-			res.a = obj.min + 1
-			return
-		} else if (n <= obj.min) {
-			__recurse(list, n, l, obj.min)
-		} else if (n >= obj.max) {
-			__recurse(list, n, obj.max, r)
-		} 
-	}
-	__recurse(list, n, 0, list.length - 1)
-	return list[res.a]
+	return isFind ? res : -1
+
 }
 
-console.log('result-----',quickSortNoN([11,32,5,7,3,1,0,22,55,9,10],5)) 
+console.log('1', slidingPuzzle([[4, 1, 2], [5, 0, 3]]))
+console.log('2', slidingPuzzle([[1,2,3],[5,4,0]]))
+console.log('3', slidingPuzzle([[1,2,3],[4,0,5]]))
