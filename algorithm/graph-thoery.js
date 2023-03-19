@@ -1,4 +1,4 @@
-const { ReadGraph, Component, Path, ShortestPath } = require('./readGraph')
+const { ReadGraph, Component, Path, ShortestPath,LazyPrimMST } = require('./readGraph')
 const { Edge } = require('./weight-graph')
 class sIterator {
 	constructor(graph, v) {
@@ -11,14 +11,14 @@ class sIterator {
 		if (this.graph.g.length !== 0) {
 			return this.graph.g[this.v][0]
 		}
-		return -1
+		return null
 	}
 	next() {
 		this.index++
 		if (this.index < this.graph.g[this.v].length) {
 			return this.graph.g[this.v][this.index]
 		}
-		return -1
+		return null
 	}
 	end() {
 		return this.index >= this.graph.g[this.v].length
@@ -136,7 +136,7 @@ class SparseGraph {
 		return this.m
 	}
 	// v,w为两个点
-	addEdge(v, w) {
+	addEdge(v, w,weight) {
 		if (v < 0 || v >= this.n) {
 			return
 		}
@@ -146,34 +146,34 @@ class SparseGraph {
 		// if (this.hasEdge(v, w)) {
 		// 	return
 		// }
-		this.g[v].push(w)
+		this.g[v].push(new Edge(v,w,weight))
 		if (!this.direacted && v !== w) {
-			this.g[w].push(v)
+			this.g[w].push(new Edge(w,v,weight))
 		}
 		this.m++
 	}
 	// 可以看出hasEdge判断复杂度为O(n)级别，如果在addEdge中使用，则addEdge也变为了O(n)级，消耗较大，因此暂不使用
 	// 由此也可看出稀疏图在处理此类问题上的缺陷，判断是否已有边需要通过遍历来实现，消耗较大
-	// hasEdge(v, w) {
-	// 	if (v < 0 || v >= n) {
-	// 		return
-	// 	}
-	// 	if (w < 0 || w >= n) {
-	// 		return
-	// 	}
-	// 	let res = false
-	// 	this.g[v].forEach(e=>{
-	// 		if(e === w){
-	// 			res = true
-	// 		}
-	// 	})
-	// 	return res
-	// }
+	hasEdge(v, w) {
+		if (v < 0 || v >= n) {
+			return
+		}
+		if (w < 0 || w >= n) {
+			return
+		}
+		let res = false
+		this.g[v].forEach(e=>{
+			if(e.other(v) === w){
+				res = true
+			}
+		})
+		return res
+	}
 	show() {
 		for (let i = 0; i < this.n; i++) {
 			let res = ''
 			for (let j = 0; j < this.g[i].length; j++) {
-				res = `${res} ${this.g[i][j]}`
+				res = `${res} ${this.g[i][j].wt()}`
 			}
 			console.log(`vertex ${i}:${res}`)
 		}
@@ -230,12 +230,12 @@ function ergodic2() {
 
 function test1() {
 	const filename = 'graph1.txt'
-	// const g1 = new SparseGraph(6, false)
-	// const r1 = new ReadGraph(g1, filename)
-	// g1.show()
-	const g2 = new DenseGraph(6, false)
-	const r2 = new ReadGraph(g2, filename)
-	g2.show()
+	const g1 = new SparseGraph(8, false)
+	const r1 = new ReadGraph(g1, filename)
+	g1.show()
+	// const g2 = new DenseGraph(8, false)
+	// const r2 = new ReadGraph(g2, filename)
+	// g2.show()
 }
 
 
@@ -259,4 +259,12 @@ function test3() {
 	shortestPath.showPath(6)
 }
 
-test1()
+function test4(){
+	const filename = 'graph1.txt'
+	const g1 = new SparseGraph(8, false)
+	const r1 = new ReadGraph(g1, filename)
+	const minMST = new LazyPrimMST(g1)
+	console.log('the result is :',minMST.result())
+}
+
+test4()

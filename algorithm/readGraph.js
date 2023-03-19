@@ -1,4 +1,6 @@
+const { equal } = require('assert');
 const fs = require('fs');
+const { MinHeap } = require('./minimalHeap')
 class ReadGraph {
 	constructor(graph, filename) {
 		let list = []
@@ -7,10 +9,9 @@ class ReadGraph {
 			list.push(line)
 		});
 		const [V, E] = list.shift()
-		console.log('list-----',list)
 		for (let i = 0; i < list.length; i++) {
 			const [n, m, w] = list[i].split(' ')
-			graph.addEdge(n, m, w)
+			graph.addEdge(n, m, Number(w))
 		}
 	}
 }
@@ -160,6 +161,55 @@ class ShortestPath {
 	}
 }
 
+class LazyPrimMST {
+	constructor(graph) {
+		this.g = graph
+		this.marked = new Array(this.g.V()).fill(false)
+		this.mstWeight = 0
+		this.pq = new MinHeap()
+		this.mst = []
+		this.visit(0)
+		while (!this.pq.isEmpty()) {
+			const min = this.pq.extractMinimum()
+			// 这里想判断一下这个边是不是横切边，即构成边的两个点是否一个被访问过，另一个没有
+			// 之所以判断这么写，不是因为可能存在两个点都未被访问过的情况，而是这么写最简单
+			// 原因是对于min中的两个点v和w，我们分不清哪个是被访问过的，那个不是
+			if (this.marked[min.v()] == this.marked[min.w()]) {
+				continue
+			}
+			this.mst.push(min)
+			// 关于min这个edge已经算是找到权值最小边了，接着就应该继续访问没被访问过的点
+			if (this.marked[min.v()]) {
+				this.visit(min.w())
+			} else {
+				this.visit(min.v())
+			}
+		}
+		this.mstWeight = this.mst[0].wt()
+		console.log('this.mst----',this.mst)
+		for (let i = 1; i < this.mst.length; i++) {
+			this.mstWeight += Number(this.mst[i].wt())
+		}
+	}
+	visit(v) {
+		if (this.marked[v]) {
+			return
+		}
+		this.marked[v] = true
+		const adj = new this.g.iterator(this.g, v)
+		for (let e = adj.begin(); !adj.end(); e = adj.next()) {
+			if (!this.marked[e.other(v)]) {
+				this.pq.insert(e)
+			}
+		}
+	}
+	result() {
+		console.log('result----',)
+		return this.mstWeight
+	}
+
+}
+
 module.exports = {
-	ReadGraph, Component, Path, ShortestPath
+	ReadGraph, Component, Path, ShortestPath, LazyPrimMST
 } 
