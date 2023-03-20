@@ -1,6 +1,7 @@
 const { equal } = require('assert');
 const fs = require('fs');
 const { MinHeap } = require('./minimalHeap')
+const { MinIndexHeap } = require('./indexHeap')
 class ReadGraph {
 	constructor(graph, filename) {
 		let list = []
@@ -186,7 +187,7 @@ class LazyPrimMST {
 			}
 		}
 		this.mstWeight = this.mst[0].wt()
-		console.log('this.mst----',this.mst)
+		console.log('this.mst----', this.mst)
 		for (let i = 1; i < this.mst.length; i++) {
 			this.mstWeight += Number(this.mst[i].wt())
 		}
@@ -207,7 +208,45 @@ class LazyPrimMST {
 		console.log('result----',)
 		return this.mstWeight
 	}
+}
 
+class PrimMST {
+	constructor(graph) {
+		this.g = graph
+		this.marked = new Array(this.g.V()).fill(false)
+		this.mstWeight = 0
+		this.ipq = new MinIndexHeap()
+		this.edgeTo = []
+		this.mst = []
+		this.visit(0)
+		while (!this.ipq.isEmpty()) {
+			const i = this.ipq.extractMinIndex()
+			this.mst.push(this.edgeTo(i))
+			this.visit(i)
+		}
+	}
+
+	visit(v) {
+		if (this.marked[v]) {
+			return
+		}
+		this.marked[v] = true
+		const adj = new this.g.iterator(this.g, v)
+		for (let e = adj.begin(); !adj.end(); e = adj.next()) {
+			const w = e.other(v)
+			if (!this.marked[w]) {
+				if (!this.edgeTo[w]) {
+					this.edgeTo[w] = e
+					this.ipq.insert(e.wt(), w)
+				} else {
+					if (e.wt() < this.edgeTo[w].wt()) {
+						this.edgeTo[w] = e
+						this.ipq.change(w, e.wt())
+					}
+				}
+			}
+		}
+	}
 }
 
 module.exports = {
