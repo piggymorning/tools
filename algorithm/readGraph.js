@@ -2,6 +2,7 @@ const { equal } = require('assert');
 const fs = require('fs');
 const { MinHeap } = require('./minimalHeap')
 const { MinIndexHeap } = require('./indexHeap')
+const { UF4 } = require('./union-find')
 class ReadGraph {
 	constructor(graph, filename) {
 		let list = []
@@ -209,7 +210,13 @@ class LazyPrimMST {
 		return this.mstWeight
 	}
 }
-
+/* 
+	此处用的最小索引堆做的优化，虽然和上面的LazyPrimMST用的都是堆结构，但是具体的使用过程区别还是很大的。
+	Lazy的实现，用的是最小堆结构，堆中的元素都是边，边中有不少重复的点，这也正是待优化的地方。索引堆的话，堆中
+	的元素就是点，不会有重复的情况，因此是优化的。此外，这两种数据结构本身的差异也带来了很多功能上的差异。对于原始堆
+	来说，堆中的元素不固定，即便固定了元素的索引也不固定，因为元素的位置随着新的元素加入和旧的元素取走是在不断变化的，
+	因此其实不适用于图论这种，把点当做一个元素，用堆来处理点之间的关系。用索引堆来处理图论中的点元素则非常适合
+ */
 class PrimMST {
 	constructor(graph) {
 		this.g = graph
@@ -249,6 +256,42 @@ class PrimMST {
 	}
 }
 
+class Krusk {
+	constructor(graph) {
+		this.g = graph
+		this.marked = new Array(this.g.V()).fill(false)
+		this.mstWeight = 0
+		this.pq = new MinHeap()
+		this.uf = new UF4(this.g.V())
+		this.mst = []
+		for (let i = 0; i < this.g.V(); i++) {
+			const adj = new this.g.iterator(this.g, i)
+			for (let e = adj.begin(); !adj.end(); e = adj.next()) {
+				if (e.v() < e.w()) {
+					this.pq.insert(e)
+				}
+			}
+		}
+		console.log('pq--size:', this.pq.size())
+		while (!this.pq.isEmpty()) {
+			const e = this.pq.extractMinimum()
+			const v = e.v()
+			const w = e.w()
+			if (!this.uf.isConnected(v, w)) {
+				console.log('v-----w------', v, w)
+				this.mst.push(e)
+				this.uf.unionElements(v, w)
+			}
+		}
+		this.mstWeight = 0
+		for (let i = 0; i < this.mst.length; i++) {
+			this.mstWeight += this.mst[i].wt()
+		}
+	}
+	result(){
+		return this.mstWeight
+	}
+}
 module.exports = {
-	ReadGraph, Component, Path, ShortestPath, LazyPrimMST
+	ReadGraph, Component, Path, ShortestPath, LazyPrimMST, Krusk
 } 

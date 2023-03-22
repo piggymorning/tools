@@ -1,4 +1,4 @@
-const { ReadGraph, Component, Path, ShortestPath,LazyPrimMST } = require('./readGraph')
+const { ReadGraph, Component, Path, ShortestPath,LazyPrimMST,Krusk } = require('./readGraph')
 const { Edge } = require('./weight-graph')
 class sIterator {
 	constructor(graph, v) {
@@ -266,5 +266,13 @@ function test4(){
 	const minMST = new LazyPrimMST(g1)
 	console.log('the result is :',minMST.result())
 }
+function test5(){
+	const filename = 'graph1.txt'
+	const g1 = new SparseGraph(8, false)
+	const r1 = new ReadGraph(g1, filename)
+	const minMST = new Krusk(g1)
+	console.log('the result is :',minMST.result())
+}
 
-test4()
+// test4()
+test5()

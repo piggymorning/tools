@@ -7,7 +7,7 @@ class MaxIndexHeap{
 		this.reverses = []
 	}
 
-	#shiftUp(k) {
+	shiftUp(k) {
 		while (k > 1 && this.data[this.indexes[Math.floor(k / 2)]] < this.data[this.indexes[k]]) {
 			exchange(this.indexes, Math.floor(k / 2), k)
 			this.reverses[this.indexes[k]] = k
@@ -16,7 +16,7 @@ class MaxIndexHeap{
 		}
 	}
 
-	#shiftDown(k) {
+	shiftDown(k) {
 		while (2 * k <= this.count) {
 			let j = 2 * k
 			if (j + 1 <= this.count && this.data[this.indexes[j + 1]] > this.data[this.indexes[j]]) j = j + 1
@@ -36,7 +36,7 @@ class MaxIndexHeap{
 		this.data[i] = item
 		this.indexes[this.count+1] = i
 		this.reverses[i] = this.count +1
-		this.#shiftUp(this.count+1)
+		this.shiftUp(this.count+1)
 		this.count++
 	}
 
@@ -46,7 +46,7 @@ class MaxIndexHeap{
 		this.reverses[this.indexes[1]] = 1
 		this.reverses[this.indexes[this.count]] = 0
 		this.count--
-		this.#shiftDown(1)
+		this.shiftDown(1)
 		return result
 	}
 
@@ -55,27 +55,27 @@ class MaxIndexHeap{
 		this.indexes[1] = this.indexes[this.count]
 		this.reverses[this.indexes[this.count]] = 0
 		this.count--
-		this.#shiftDown(1)
+		this.shiftDown(1)
 		return ret
 	}
 
 	getItem(i){
-		let i = i+1
-		return this.data[i]
+		let p = i+1
+		return this.data[p]
 	}
 
 	change(i,item){
 		this.data[i+1] = item
 		// for(let j=1;j<=this.count;j++){
 		// 	if(this.indexes[j] = i+1){
-		// 		this.#shiftDown(j)
-		// 		this.#shiftUp(j)
+		// 		this.shiftDown(j)
+		// 		this.shiftUp(j)
 		// 		return
 		// 	}
 		// }
 		let j = this.reverses[i+1]
-		this.#shiftDown(j)
-		this.#shiftUp(j)
+		this.shiftDown(j)
+		this.shiftUp(j)
 	}
 
 	size() {
@@ -92,7 +92,7 @@ class MaxIndexHeap{
 			this.count++
 		}
 		for (let k = Math.floor(this.count / 2); k >= 1; k--) {
-			this.#shiftDown(k)
+			this.shiftDown(k)
 		}
 	}
 }
@@ -104,7 +104,7 @@ class MinIndexHeap{
 		this.reverses = []
 	}
 
-	#shiftUp(k) {
+	shiftUp(k) {
 		while (k > 1 && this.data[this.indexes[Math.floor(k / 2)]] < this.data[this.indexes[k]]) {
 			exchange(this.indexes, Math.floor(k / 2), k)
 			this.reverses[this.indexes[k]] = k
@@ -113,7 +113,7 @@ class MinIndexHeap{
 		}
 	}
 
-	#shiftDown(k) {
+	shiftDown(k) {
 		while (2 * k <= this.count) {
 			let j = 2 * k
 			if (j + 1 <= this.count && this.data[this.indexes[j + 1]] > this.data[this.indexes[j]]) j = j + 1
@@ -133,7 +133,7 @@ class MinIndexHeap{
 		this.data[i] = item
 		this.indexes[this.count+1] = i
 		this.reverses[i] = this.count +1
-		this.#shiftUp(this.count+1)
+		this.shiftUp(this.count+1)
 		this.count++
 	}
 
@@ -143,7 +143,7 @@ class MinIndexHeap{
 		this.reverses[this.indexes[1]] = 1
 		this.reverses[this.indexes[this.count]] = 0
 		this.count--
-		this.#shiftDown(1)
+		this.shiftDown(1)
 		return result
 	}
 
@@ -152,27 +152,27 @@ class MinIndexHeap{
 		this.indexes[1] = this.indexes[this.count]
 		this.reverses[this.indexes[this.count]] = 0
 		this.count--
-		this.#shiftDown(1)
+		this.shiftDown(1)
 		return ret
 	}
 
 	getItem(i){
-		let i = i+1
-		return this.data[i]
+		let p = i+1
+		return this.data[p]
 	}
 
 	change(i,item){
 		this.data[i+1] = item
 		// for(let j=1;j<=this.count;j++){
 		// 	if(this.indexes[j] = i+1){
-		// 		this.#shiftDown(j)
-		// 		this.#shiftUp(j)
+		// 		this.shiftDown(j)
+		// 		this.shiftUp(j)
 		// 		return
 		// 	}
 		// }
 		let j = this.reverses[i+1]
-		this.#shiftDown(j)
-		this.#shiftUp(j)
+		this.shiftDown(j)
+		this.shiftUp(j)
 	}
 
 	size() {
@@ -189,7 +189,7 @@ class MinIndexHeap{
 			this.count++
 		}
 		for (let k = Math.floor(this.count / 2); k >= 1; k--) {
-			this.#shiftDown(k)
+			this.shiftDown(k)
 		}
 	}
 }
