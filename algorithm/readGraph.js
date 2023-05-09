@@ -272,7 +272,6 @@ class Krusk {
 				}
 			}
 		}
-		console.log('pq--size:', this.pq.size())
 		while (!this.pq.isEmpty()) {
 			const e = this.pq.extractMinimum()
 			const v = e.v()
@@ -288,10 +287,74 @@ class Krusk {
 			this.mstWeight += this.mst[i].wt()
 		}
 	}
-	result(){
+	result() {
 		return this.mstWeight
 	}
 }
+class Dijkstra {
+	constructor(graph, s) {
+		this.g = graph
+		this.s = s
+		this.marked = new Array(this.g.V()).fill(false)
+		 this.distTo = new Array(this.g.V()).fill(0)
+		this.from = new Array(this.g.V()).fill(null)
+		 this.ipq = new MinIndexHeap(this.g.V())
+		this.distTo[s] = 0
+		this.marked[s] = true
+		this.ipq.insert(this.s, this.distTo[s])
+		while (!this.ipq.isEmpty()) {
+			const v = this.ipq.extractMinIndex()
+			this.marked[v] = true
+			const adj = new this.g.iterator(this.g, v)
+			for (let e = adj.begin(); !adj.end(); e = adj.next()) {
+				const w = e.other(v)
+				if (!this.marked[w]) {
+					if (!this.from[w] || this.distTo[v] + e.wt() < this.distTo[w]) {
+						this.from[w] = e
+						this.distTo[w] = this.distTo[v] + e.wt()
+					}
+					if (this.ipq.contain(w)) {
+						this.ipq.change(w, this.distTo[w])
+					} else {
+						this.ipq.insert(w, this.distTo[w])
+					}
+
+				}
+			}
+		}
+	}
+	shortestPathTo(w) {
+		return this.distTo[w]
+	}
+
+	hasPathTo(w) {
+		return this.marked[w]
+	}
+
+	shortestPath() {
+
+	}
+}
+
+class BellmanFord {
+	constructor(graph,s){
+		this.g = graph
+		this.s = s
+		this.distTo = new Array(this.g.V()).fill(0)
+		this.from = new Array(this.g.V()).fill(null)
+		for(let pass = 1;pass<this.g.V();pass++){
+			for(let i = 0;i<this.g.V();i++){
+				const adj = new this.g.iterator(this.g, i)
+				for (let e = adj.begin(); !adj.end(); e = adj.next()) {
+					
+				}
+			}
+		}
+	}
+}
+
+
 module.exports = {
-	ReadGraph, Component, Path, ShortestPath, LazyPrimMST, Krusk
-} 
+	ReadGraph, Component, Path, ShortestPath, LazyPrimMST, Krusk,Dijkstra,BellmanFord 
+}
+
